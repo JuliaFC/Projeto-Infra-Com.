@@ -3,8 +3,8 @@ import os
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = ''
-port = 1246
-jogadas = 0
+port = 1234
+
 chunk_list = []
 
 def quit():
@@ -12,46 +12,29 @@ def quit():
     s.close()
     exit(0)
 	
-	
 
 def getSize(filename):
     st = os.stat(filename)
     return st.st_size
 
-def Client():
+def Client(filename):
 
-    photo = open('bucky.jpg', 'rb')
+    photo = open('client.jpg', 'wb')
 
     s.connect ( (host,port) )
-    
-    porc = 0.0
-    sent = 0.0
-    chunk = photo.read(1024)
-    chunk_index = 0;
+  
+    packet = s.recv(1000)
+    while (packet):
 
-    while (chunk):
-        
-      porc = sent/getSize('bucky.jpg') * 100  # calcula a porcentagem
-      sent = sent + 1024                      # enviados de 1024 em 1024 bytes
-
-      chunk_list.append(chunk_index)          # adiciona o numero do pacote atual na lista
-      chunk_index = chunk_index + 1           # incrementa o numero do pacote
-
-      print porc                              # imprime a porcentagem
-      s.send(chunk)        
-      chunk = photo.read(1024)		
-	
-
+      photo.write(packet)
+      packet = s.recv(1000)
+  
     photo.close()
-    
-    print chunk_list
-    print getSize('bucky.jpg') 
-    print "Done Sending"
+    print "Cliente recebeu o arquivo " + filename
     quit()
 
 
-
-def Server():
+def Server(filename):
 
     try:
         variavel = (host,port)
@@ -63,23 +46,41 @@ def Server():
     s.listen(2)
 
     conn, addr = s.accept()
-    recphoto = open('copy.jpg', 'wb')
-    data = conn.recv(1024)
-    while (data):
 
-      recphoto.write(data)
-      data = conn.recv(1024)
-	
-    recphoto.close()
-    conn.close()
+    photo = open(filename, 'rb')
+
+    porc = 0.0
+    sent = 0.0
+    size = getSize(filename)
+    chunk = photo.read(1000)
+    chunk_index = 0;
+
+    while (chunk):
+        
+      porc = (sent/size) * 100  # calcula a porcentagem
+      sent = sent + 1000                     # enviados de 1000 em 1000 bytes
+
+      chunk_list.append(chunk_index)          # adiciona o numero do pacote atual na lista
+      chunk_index = chunk_index + 1           # incrementa o numero do pacote
+
+      print porc                              # imprime a porcentagem
+      conn.send(chunk)        
+      chunk = photo.read(1000)      
+
+    photo.close()
+
+
+    print chunk_list
+    print size
+    print "Done Sending"
     quit()
 
 def TicTacToe():
 
     opt = raw_input('digite s ou c:')
     if(opt == 's'):
-        Server()
+        Server("bucky.jpg")
     else:
-        Client()
+        Client("bucky.jpg")
 
 TicTacToe()
